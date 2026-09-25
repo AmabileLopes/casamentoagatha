@@ -10,6 +10,7 @@ const imagens = {
   __RAMO__: 'ramo.webp',
   __FLORES__: 'flores.webp',
   __MANUAL__: 'manual.webp',
+  __PRESENTES__: 'presentes.webp',
 };
 let html = fs.readFileSync(path.join(__dirname, 'src', 'convite.template.html'), 'utf8');
 for (const [marca, arquivo] of Object.entries(imagens)) html = html.replace(marca, b64(arquivo));
