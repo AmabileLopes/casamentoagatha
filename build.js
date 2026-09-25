@@ -9,6 +9,7 @@ const imagens = {
   __IGREJA__: 'igreja.jpg',
   __RAMO__: 'ramo.png',
   __FLORES__: 'flores.png',
+  __MANUAL__: 'manual.png',
 };
 let html = fs.readFileSync(path.join(__dirname, 'src', 'convite.template.html'), 'utf8');
 for (const [marca, arquivo] of Object.entries(imagens)) html = html.replace(marca, b64(arquivo));
