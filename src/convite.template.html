@@ -4,6 +4,76 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Convite de Casamento</title>
+<script>
+  /* Script no início do arquivo (antes das imagens embutidas), para não se perder se o código for cortado. */
+  document.documentElement.className += ' js';
+  document.addEventListener('DOMContentLoaded', function () {
+    var envelope = document.getElementById('tela-envelope');
+    var convite = document.getElementById('tela-convite');
+    var abrindo = false;
+
+    function abrir() {
+      if (abrindo) return;
+      abrindo = true;
+      envelope.classList.add('abrindo');
+      setTimeout(function () {
+        convite.classList.add('ativa');
+        convite.setAttribute('aria-hidden', 'false');
+        convite.scrollTop = 0;
+      }, 650);
+      setTimeout(function () {
+        envelope.classList.remove('ativa');
+        envelope.classList.add('oculta');
+      }, 1100);
+    }
+    /* O selo é um <label> ligado a uma caixa oculta: abre mesmo se o JavaScript não rodar. */
+    var caixa = document.getElementById('abrir-convite');
+    caixa.checked = false;
+    caixa.addEventListener('change', abrir);
+    [].forEach.call(document.querySelectorAll('.selo, .selo-texto'), function (el) {
+      el.addEventListener('click', function (e) { e.preventDefault(); abrir(); });
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(); }
+      });
+    });
+
+    /* Manual dos convidados (usa #manual para o botão "voltar" do celular funcionar) */
+    var manual = document.getElementById('manual');
+    function mostrarManual(sim) {
+      manual.classList.toggle('ativa', sim);
+      manual.setAttribute('aria-hidden', sim ? 'false' : 'true');
+      if (sim) manual.scrollTop = 0;
+    }
+    document.getElementById('abrir-manual').addEventListener('click', function (e) {
+      e.preventDefault();
+      try { history.pushState({ manual: true }, '', '#manual'); } catch (err) {}
+      mostrarManual(true);
+    });
+    document.getElementById('fechar-manual').addEventListener('click', function (e) {
+      e.preventDefault();
+      if (location.hash === '#manual') { try { history.back(); } catch (err) {} }
+      mostrarManual(false);
+    });
+    window.addEventListener('popstate', function () { mostrarManual(location.hash === '#manual'); });
+
+    /* Contagem regressiva: sábado, 28/11/2026, 19:30 (horário de Brasília) */
+    var alvo = new Date('2026-11-28T19:30:00-03:00').getTime();
+    var campos = {};
+    ['dias', 'horas', 'minutos', 'segundos'].forEach(function (k) {
+      campos[k] = document.querySelector('[data-c="' + k + '"]');
+    });
+    function dois(n) { return (n < 10 ? '0' : '') + n; }
+    function atualizar() {
+      var r = Math.max(0, Math.floor((alvo - Date.now()) / 1000));
+      campos.dias.textContent = dois(Math.floor(r / 86400));
+      campos.horas.textContent = dois(Math.floor(r % 86400 / 3600));
+      campos.minutos.textContent = dois(Math.floor(r % 3600 / 60));
+      campos.segundos.textContent = dois(r % 60);
+    }
+    atualizar();
+    setInterval(atualizar, 1000);
+  });
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Monsieur+La+Doulaise&family=Dancing+Script:wght@400;500&family=Montserrat:wght@400;500&family=Old+Standard+TT&display=swap" rel="stylesheet">
@@ -36,6 +106,7 @@
     transition: opacity .9s ease, transform 1.1s ease, visibility 0s linear 1.1s;
   }
   .tela.ativa { visibility: visible; transition: opacity .9s ease, transform 1.1s ease; }
+  html.js .tela:not(.ativa) { pointer-events: none; }
 
   /* ---------- TELA 1: ENVELOPE ---------- */
   #tela-envelope {
@@ -297,7 +368,7 @@
   .esperamos .l2 { margin-left: calc(var(--u) * 0); }
 
   /* ---------- TELA 3: MANUAL DOS CONVIDADOS ---------- */
-  #tela-manual {
+  #manual {
     opacity: 0;
     visibility: hidden;
     overflow-y: auto;
@@ -306,7 +377,11 @@
     background: #fff;
     z-index: 5;
   }
-  #tela-manual.ativa { opacity: 1; visibility: visible; transition: opacity .6s ease; }
+  #manual.ativa { opacity: 1; visibility: visible; transition: opacity .6s ease; }
+  /* Sem JavaScript: abre/fecha só com CSS */
+  html:not(.js) #abrir-convite:checked ~ #tela-envelope { opacity: 0; visibility: hidden; pointer-events: none; }
+  html:not(.js) #abrir-convite:checked ~ #tela-convite,
+  html:not(.js) #manual:target { opacity: 1; visibility: visible; transition: opacity .6s ease; }
   .manual { position: relative; width: min(100vw, 540px); margin: 0 auto; }
   .manual img { display: block; width: 100%; height: auto; }
   .so-leitor {
@@ -336,12 +411,13 @@
 </style>
 </head>
 <body>
+  <input type="checkbox" id="abrir-convite" class="so-leitor" tabindex="-1" aria-hidden="true">
 
   <!-- TELA 1: carta fechada -->
   <section id="tela-envelope" class="tela ativa papel" aria-label="Envelope do convite">
     <div class="envelope" role="img" aria-label="Envelope com o monograma A &amp; C e selo de cera verde">
-      <button class="selo" type="button" aria-label="Clique para abrir o convite"></button>
-      <button class="selo-texto" type="button" aria-label="Clique para abrir" tabindex="-1"></button>
+      <label class="selo" for="abrir-convite" role="button" tabindex="0" aria-label="Clique para abrir o convite"></label>
+      <label class="selo-texto" for="abrir-convite" aria-hidden="true"></label>
     </div>
   </section>
 
@@ -431,10 +507,10 @@
   </section>
 
   <!-- TELA 3: manual dos convidados -->
-  <section id="tela-manual" class="tela" aria-label="Manual dos convidados" aria-hidden="true">
-    <button class="voltar" type="button" id="fechar-manual" aria-label="Voltar para o convite">
+  <section id="manual" class="tela" aria-label="Manual dos convidados" aria-hidden="true">
+    <a class="voltar" href="#" id="fechar-manual" aria-label="Voltar para o convite">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
-    </button>
+    </a>
     <main class="manual">
       <img src="__MANUAL__" alt="">
       <div class="so-leitor">
@@ -455,64 +531,6 @@
     </main>
   </section>
 
-<script>
-  (function () {
-    var envelope = document.getElementById('tela-envelope');
-    var convite = document.getElementById('tela-convite');
-    var abrindo = false;
 
-    function abrir() {
-      if (abrindo) return;
-      abrindo = true;
-      envelope.classList.add('abrindo');
-      setTimeout(function () {
-        convite.classList.add('ativa');
-        convite.setAttribute('aria-hidden', 'false');
-        convite.scrollTop = 0;
-      }, 650);
-      setTimeout(function () {
-        envelope.classList.remove('ativa');
-        envelope.classList.add('oculta');
-      }, 1100);
-    }
-    document.querySelector('.selo').addEventListener('click', abrir);
-    document.querySelector('.selo-texto').addEventListener('click', abrir);
-
-    /* Manual dos convidados (usa #manual para o botão "voltar" do celular funcionar) */
-    var manual = document.getElementById('tela-manual');
-    function mostrarManual(sim) {
-      manual.classList.toggle('ativa', sim);
-      manual.setAttribute('aria-hidden', sim ? 'false' : 'true');
-      if (sim) manual.scrollTop = 0;
-    }
-    document.getElementById('abrir-manual').addEventListener('click', function (e) {
-      e.preventDefault();
-      try { history.pushState({ manual: true }, '', '#manual'); } catch (err) {}
-      mostrarManual(true);
-    });
-    document.getElementById('fechar-manual').addEventListener('click', function () {
-      if (location.hash === '#manual') { try { history.back(); } catch (err) {} }
-      mostrarManual(false);
-    });
-    window.addEventListener('popstate', function () { mostrarManual(location.hash === '#manual'); });
-
-    /* Contagem regressiva: sábado, 28/11/2026, 19:30 (horário de Brasília) */
-    var alvo = new Date('2026-11-28T19:30:00-03:00').getTime();
-    var campos = {};
-    ['dias', 'horas', 'minutos', 'segundos'].forEach(function (k) {
-      campos[k] = document.querySelector('[data-c="' + k + '"]');
-    });
-    function dois(n) { return (n < 10 ? '0' : '') + n; }
-    function atualizar() {
-      var r = Math.max(0, Math.floor((alvo - Date.now()) / 1000));
-      campos.dias.textContent = dois(Math.floor(r / 86400));
-      campos.horas.textContent = dois(Math.floor(r % 86400 / 3600));
-      campos.minutos.textContent = dois(Math.floor(r % 3600 / 60));
-      campos.segundos.textContent = dois(r % 60);
-    }
-    atualizar();
-    setInterval(atualizar, 1000);
-  })();
-</script>
 </body>
 </html>
